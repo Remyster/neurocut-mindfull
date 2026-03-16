@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>NeuroCut · Mindful</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0a;color:#e8e8e8;min-height:100vh}
+.app{padding:1.5rem;max-width:400px;margin:0 auto}
+.logo{font-size:10px;color:#555;letter-spacing:3px;font-family:monospace;margin-bottom:1.5rem}
+.tabs{display:flex;border:1px solid #222;border-radius:10px;overflow:hidden;margin-bottom:1.5rem}
+.tab{flex:1;padding:10px;background:none;border:none;cursor:pointer;font-size:11px;color:#666;font-family:monospace;transition:all 0.2s}
+.tab.on{background:#0f2a1e;color:#1D9E75}
+.card{background:#111;border:1px solid #222;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem}
+.zin-nr{font-size:10px;color:#555;font-family:monospace;margin-bottom:6px}
+.zin-txt{font-size:15px;color:#ddd;line-height:1.65;font-style:italic;margin-bottom:1rem}
+.rec-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+button{padding:8px 18px;border:1px solid #333;border-radius:8px;background:#111;cursor:pointer;font-size:12px;color:#ccc;font-family:inherit;transition:all 0.15s}
+button:hover{background:#1a1a1a;border-color:#444}
+button:disabled{opacity:0.3;cursor:default}
+.btn-rec{border-color:#7a2020;color:#e05555}
+.btn-rec.aktief{background:#1a0808;animation:recpulse 1s ease-in-out infinite}
+@keyframes recpulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.btn-ok{border-color:#0d4a35;color:#1D9E75}
+.status{font-size:11px;font-family:monospace;color:#555;margin-left:4px}
+.prog-wrap{margin-bottom:1.25rem}
+.prog-row{display:flex;gap:5px;margin-bottom:6px;flex-wrap:wrap}
+.pip{width:20px;height:5px;border-radius:2px;background:#1a1a1a;transition:background 0.3s}
+.pip.done{background:#1D9E75}
+.pip.cur{background:#378ADD}
+.prog-lbl{font-size:10px;color:#555;font-family:monospace}
+.ring-wrap{position:relative;width:160px;height:160px;margin:0 auto 1rem}
+.ring-svg{width:160px;height:160px;transform:rotate(-90deg)}
+.r-bg{fill:none;stroke:#1a1a1a;stroke-width:2}
+.r-pr{fill:none;stroke:#1D9E75;stroke-width:2.5;stroke-linecap:round;stroke-dasharray:471;stroke-dashoffset:471;transition:stroke-dashoffset 1s linear}
+.ring-mid{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.tnum{font-size:28px;font-weight:500;font-family:monospace;color:#e8e8e8}
+.tsub{font-size:10px;color:#555;font-family:monospace;margin-top:3px}
+.now-txt{min-height:56px;display:flex;align-items:center;justify-content:center;font-size:15px;color:#999;text-align:center;font-style:italic;line-height:1.65;margin-bottom:1rem;transition:opacity 0.8s;padding:0 8px}
+.bars{display:flex;align-items:flex-end;gap:3px;height:26px;justify-content:center;margin-bottom:1rem;opacity:0;transition:opacity 0.5s}
+.bars.on{opacity:1}
+.bar{width:4px;border-radius:2px;background:#1D9E75}
+.bar.on{animation:bounce var(--d) ease-in-out infinite alternate}
+@keyframes bounce{from{transform:scaleY(0.15)}to{transform:scaleY(1)}}
+.btn-row{display:flex;gap:8px;justify-content:center;margin-bottom:0.75rem}
+.dot{width:6px;height:6px;border-radius:50%;background:#1D9E75;opacity:0;transition:opacity 0.4s}
+.dot.on{animation:dpulse 2s ease-in-out infinite}
+@keyframes dpulse{0%,100%{opacity:0.3}50%{opacity:1}}
+.rlbl{font-size:10px;color:#555;font-family:monospace;opacity:0;transition:opacity 0.4s}
+.ruis-row{display:flex;align-items:center;gap:6px;justify-content:center;margin-bottom:0.5rem}
+.tip{font-size:11px;color:#555;text-align:center;line-height:1.6;margin-top:0.75rem}
+.warn{background:#1a1200;border:1px solid #332800;border-radius:8px;padding:8px 12px;font-size:11px;color:#a88020;line-height:1.6;margin-bottom:1rem}
+.scard{background:#111;border:1px solid #222;border-radius:12px;padding:1rem;margin-bottom:1rem}
+.sinfo{font-size:12px;color:#888;line-height:2.1;font-family:monospace}
+.snext{font-size:11px;color:#555;font-family:monospace;margin-top:4px}
+.saff{min-height:44px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#999;text-align:center;font-style:italic;line-height:1.6;margin-bottom:1rem;transition:opacity 0.8s;padding:0 8px}
+.nav-row{display:flex;gap:8px;justify-content:center;margin-top:1rem}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="logo">Neurocut · Voice Studio</div>
+  <div class="tabs">
+    <button class="tab on" onclick="goTab('rec')">Studio</button>
+    <button class="tab" onclick="goTab('m')">3 min</button>
+    <button class="tab" onclick="goTab('s')">Slaap 12u</button>
+  </div>
+
+  <div id="T_rec">
+    <div class="prog-wrap">
+      <div class="prog-row" id="pips"></div>
+      <div class="prog-lbl" id="plbl">Spreek alle zinnen in</div>
+    </div>
+    <div class="card">
+      <div class="zin-nr" id="znr">Zin 1 van 9</div>
+      <div class="zin-txt" id="ztxt"></div>
+      <div class="rec-row">
+        <button class="btn-rec" id="brec" onclick="togRec()">● opnemen</button>
+        <button id="bplay" onclick="playPrev()" disabled>▶ preview</button>
+        <button class="btn-ok" id="bok" onclick="nextZin()" disabled>✓ ok →</button>
+        <span class="status" id="sttxt"></span>
+      </div>
+    </div>
+    <div class="tip" id="navtip">Spreek rustig en zacht — alsof je tegen jezelf praat.</div>
+    <div class="nav-row">
+      <button onclick="prevZin()" id="bprev" disabled style="font-size:11px;padding:6px 14px">← vorige</button>
+      <button onclick="skipZin()" style="font-size:11px;padding:6px 14px;color:#555;border-color:#222">overslaan</button>
+    </div>
+  </div>
+
+  <div id="T_m" style="display:none">
+    <div class="ring-wrap">
+      <svg class="ring-svg" viewBox="0 0 160 160">
+        <circle class="r-bg" cx="80" cy="80" r="75"/>
+        <circle class="r-pr" id="rp" cx="80" cy="80" r="75"/>
+      </svg>
+      <div class="ring-mid">
+        <div class="tnum" id="td">3:00</div>
+        <div class="tsub" id="ts">klaar</div>
+      </div>
+    </div>
+    <div class="bars" id="mb">
+      <div class="bar" style="--d:0.7s;height:70%"></div>
+      <div class="bar" style="--d:0.9s;height:90%"></div>
+      <div class="bar" style="--d:0.6s;height:50%"></div>
+      <div class="bar" style="--d:1.1s;height:100%"></div>
+      <div class="bar" style="--d:0.8s;height:75%"></div>
+      <div class="bar" style="--d:0.65s;height:85%"></div>
+    </div>
+    <div class="now-txt" id="mt">Druk start · sluit je ogen</div>
+    <div class="btn-row">
+      <button id="bms" onclick="startM()" style="padding:10px 32px;font-size:13px;border-color:#1D9E75;color:#1D9E75">▶ start</button>
+      <button class="btn-rec" id="bmx" onclick="stopAll()" style="display:none;padding:10px 24px">■ stop</button>
+    </div>
+    <div class="ruis-row"><div class="dot" id="dm"></div><span class="rlbl" id="lm">ambient actief</span></div>
+    <div class="tip" id="mwarn" style="display:none;color:#a88020">Sommige zinnen niet opgenomen — die worden overgeslagen.</div>
+  </div>
+
+  <div id="T_s" style="display:none">
+    <div class="warn">Scherm aan laten (gedimd) op Android voor doorlopende audio.</div>
+    <div class="scard">
+      <div class="sinfo" id="si">Bruine ruis start direct<br>Jouw stem: nu + elk uur<br>Totaal: 12 uur</div>
+      <div class="snext" id="sn">&nbsp;</div>
+    </div>
+    <div class="saff" id="saff">&nbsp;</div>
+    <div class="btn-row">
+      <button id="bss" onclick="startS()" style="padding:10px 28px;font-size:13px;border-color:#1D9E75;color:#1D9E75">▶ slaap sessie</button>
+      <button class="btn-rec" id="bsx" onclick="stopAll()" style="display:none;padding:10px 24px">■ stop</button>
+    </div>
+    <div class="ruis-row"><div class="dot" id="ds"></div><span class="rlbl" id="ls">bruine ruis actief</span></div>
+    <div class="tip" id="swarn" style="display:none;color:#a88020">Geen opnames — ga eerst naar Studio tab.</div>
+  </div>
+</div>
+
+<script>
+const ZINNEN=[
+  "Adem diep in... en rustig uit. Laat alles los.",
+  "Ik heb haar niet nodig om warmte te voelen.",
+  "Ik heb haar niet nodig om gelukkig te zijn.",
+  "Ik heb haar niet nodig om voor mezelf te kiezen.",
+  "Ik besteed mijn aandacht en liefde aan mijzelf, Olivia en Zoey.",
+  "Ik heb haar reactie niet nodig om goed te voelen.",
+  "Ik laat haar los.",
+  "Ik ben sterk. Ik ben kalm. Ik ben genoeg.",
+  "Sessie voltooid. Goed gedaan, Remy."
+];
+const SH=[[1,2],[3,4],[5,6],[7,1],[2,4],[5,7],[1,3],[6,7],[2,5],[1,7],[3,6],[7]];
+let blobs=[...Array(ZINNEN.length).fill(null)];
+let bufs=[...Array(ZINNEN.length).fill(null)];
+let curIdx=0,mediaRec=null,chunks=[],isRec=false;
+let actx=null,nsrc=null,nGain=null,padOscs=[],running=false;
+let mTmrs=[],stInt=null,hTmr=null,sStart=0,hIdx=0;
+
+function initA(){
+  if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();
+  if(actx.state==='suspended')actx.resume();
+}
+async function decode(idx){
+  if(!blobs[idx])return;
+  initA();
+  const ab=await blobs[idx].arrayBuffer();
+  bufs[idx]=await actx.decodeAudioData(ab).catch(()=>null);
+}
+function buildPips(){
+  const el=document.getElementById('pips');el.innerHTML='';
+  ZINNEN.forEach((_,i)=>{
+    const d=document.createElement('div');
+    d.className='pip'+(i===curIdx?' cur':blobs[i]?' done':'');
+    el.appendChild(d);
+  });
+  const done=blobs.filter(Boolean).length;
+  document.getElementById('plbl').textContent=done===ZINNEN.length?'✓ Alle zinnen opgenomen!':done+' van '+ZINNEN.length+' opgenomen';
+}
+function renderZin(){
+  document.getElementById('znr').textContent='Zin '+(curIdx+1)+' van '+ZINNEN.length;
+  document.getElementById('ztxt').textContent=ZINNEN[curIdx];
+  document.getElementById('sttxt').textContent=blobs[curIdx]?'✓ opgenomen':'';
+  document.getElementById('bplay').disabled=!blobs[curIdx];
+  document.getElementById('bok').disabled=!blobs[curIdx];
+  document.getElementById('bprev').disabled=curIdx===0;
+  buildPips();
+}
+async function togRec(){
+  if(isRec){mediaRec&&mediaRec.stop();return;}
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+    chunks=[];
+    const opts=MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?{mimeType:'audio/webm;codecs=opus'}:{};
+    mediaRec=new MediaRecorder(stream,opts);
+    mediaRec.ondataavailable=e=>e.data.size>0&&chunks.push(e.data);
+    mediaRec.onstop=async()=>{
+      stream.getTracks().forEach(t=>t.stop());
+      blobs[curIdx]=new Blob(chunks,{type:mediaRec.mimeType||'audio/webm'});
+      await decode(curIdx);
+      isRec=false;
+      document.getElementById('brec').textContent='● opnemen';
+      document.getElementById('brec').classList.remove('aktief');
+      document.getElementById('sttxt').textContent='✓ opgenomen';
+      document.getElementById('bplay').disabled=false;
+      document.getElementById('bok').disabled=false;
+      buildPips();
+    };
+    mediaRec.start(100);isRec=true;
+    document.getElementById('brec').textContent='■ stop opname';
+    document.getElementById('brec').classList.add('aktief');
+    document.getElementById('sttxt').textContent='● bezig...';
+  }catch(e){
+    document.getElementById('sttxt').textContent='Microfoon geweigerd — check browser instellingen';
+  }
+}
+async function playPrev(){
+  if(!bufs[curIdx])await decode(curIdx);
+  if(!bufs[curIdx])return;
+  initA();
+  const src=actx.createBufferSource();
+  src.buffer=bufs[curIdx];src.connect(actx.destination);src.start();
+}
+function nextZin(){
+  if(curIdx<ZINNEN.length-1){curIdx++;renderZin();}
+  else document.getElementById('navtip').textContent='Klaar! Ga naar 3 min of Slaap tab.';
+}
+function prevZin(){if(curIdx>0){curIdx--;renderZin();}}
+function skipZin(){if(curIdx<ZINNEN.length-1){curIdx++;renderZin();}}
+
+function goTab(t){
+  ['rec','m','s'].forEach(x=>document.getElementById('T_'+x).style.display=x===t?'block':'none');
+  document.querySelectorAll('.tab').forEach((el,i)=>el.className='tab'+(['rec','m','s'][i]===t?' on':''));
+  if(t==='m'){const miss=blobs.filter((_,i)=>i<8&&!blobs[i]).length;document.getElementById('mwarn').style.display=miss?'block':'none';}
+  if(t==='s'){document.getElementById('swarn').style.display=blobs.some(Boolean)?'none':'block';}
+}
+
+function ruis(vol){
+  if(nsrc){try{nsrc.stop()}catch(e){}}
+  const sr=actx.sampleRate,sz=sr*4,buf=actx.createBuffer(1,sz,sr),d=buf.getChannelData(0);
+  let l=0;for(let i=0;i<sz;i++){const w=Math.random()*2-1;d[i]=(l+.02*w)/1.02;l=d[i];d[i]*=3.5}
+  nsrc=actx.createBufferSource();nsrc.buffer=buf;nsrc.loop=true;
+  nGain=actx.createGain();nGain.gain.setValueAtTime(0,actx.currentTime);
+  nGain.gain.linearRampToValueAtTime(vol,actx.currentTime+2.5);
+  nsrc.connect(nGain);nGain.connect(actx.destination);nsrc.start();
+}
+function stopRuis(){
+  if(nGain)nGain.gain.linearRampToValueAtTime(0,actx.currentTime+1.5);
+  setTimeout(()=>{if(nsrc){try{nsrc.stop()}catch(e){}nsrc=null}},1700);
+}
+function pad(freqs,vol){
+  padOscs.forEach(o=>{try{o.stop()}catch(e){}});padOscs=[];
+  const m=actx.createGain();m.gain.setValueAtTime(0,actx.currentTime);
+  m.gain.linearRampToValueAtTime(vol,actx.currentTime+4);m.connect(actx.destination);
+  freqs.forEach((f,i)=>{
+    const o=actx.createOscillator(),g=actx.createGain();
+    o.type='sine';o.frequency.setValueAtTime(f,actx.currentTime);
+    const lfo=actx.createOscillator(),lg=actx.createGain();
+    lfo.frequency.setValueAtTime(.05+i*.025,actx.currentTime);
+    lg.gain.setValueAtTime(f*.004,actx.currentTime);
+    lfo.connect(lg);lg.connect(o.frequency);lfo.start();
+    g.gain.setValueAtTime(1/freqs.length,actx.currentTime);
+    o.connect(g);g.connect(m);o.start();padOscs.push(o,lfo);
+  });
+}
+function stopPad(){padOscs.forEach(o=>{try{o.stop()}catch(e){}});padOscs=[];}
+
+function playBuf(idx,vol){
+  return new Promise(res=>{
+    if(!bufs[idx]){res();return;}
+    initA();
+    const src=actx.createBufferSource(),g=actx.createGain();
+    src.buffer=bufs[idx];g.gain.setValueAtTime(vol||0.9,actx.currentTime);
+    src.connect(g);g.connect(actx.destination);src.onended=res;src.start();
+  });
+}
+async function playSeq(ids,vol,elId){
+  for(const i of ids){
+    if(!running)return;
+    if(!bufs[i])continue;
+    if(elId)fadeT(elId,ZINNEN[i]);
+    await playBuf(i,vol);
+    await sleep(1100);
+  }
+}
+function fadeT(id,txt){
+  const el=document.getElementById(id);el.style.opacity=0;
+  setTimeout(()=>{el.textContent=txt;el.style.opacity=1},260);
+}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+function animBars(on){
+  const el=document.getElementById('mb');el.className='bars'+(on?' on':'');
+  el.querySelectorAll('.bar').forEach(b=>b.className='bar'+(on?' on':''));
+}
+function setDot(sfx,on){
+  document.getElementById('d'+sfx).className='dot'+(on?' on':'');
+  document.getElementById('l'+sfx).style.opacity=on?1:0;
+}
+
+async function startM(){
+  initA();running=true;
+  document.getElementById('bms').style.display='none';
+  document.getElementById('bmx').style.display='';
+  setDot('m',true);animBars(true);
+  pad([174,261,329,392,523],.055);ruis(.04);
+  const circ=2*Math.PI*75,pr=document.getElementById('rp');
+  pr.style.strokeDasharray=circ;pr.style.strokeDashoffset=circ;
+  let el=0;mTmrs=[];
+  const times=[0,18,38,58,80,102,122,142];
+  [0,1,2,3,4,5,6,7].forEach((zi,si)=>{
+    mTmrs.push(setTimeout(async()=>{
+      if(!running)return;
+      fadeT('mt',ZINNEN[zi]);await playBuf(zi,.9);
+    },times[si]*1000));
+  });
+  mTmrs.push(setTimeout(async()=>{
+    if(!running)return;
+    fadeT('mt',ZINNEN[8]);await playBuf(8,.9);
+    setTimeout(()=>{if(running)stopAll(true)},4000);
+  },168000));
+  const tmr=setInterval(()=>{
+    el++;const rem=180-el;
+    document.getElementById('td').textContent=Math.floor(rem/60)+':'+(rem%60).toString().padStart(2,'0');
+    document.getElementById('ts').textContent=el<180?'resterend':'klaar';
+    pr.style.strokeDashoffset=circ*(1-el/180);
+    if(el>=180)clearInterval(tmr);
+  },1000);
+  mTmrs.push(tmr);
+}
+
+async function startS(){
+  initA();running=true;sStart=Date.now();hIdx=0;
+  document.getElementById('bss').style.display='none';
+  document.getElementById('bsx').style.display='';
+  document.getElementById('si').textContent='Ruis actief · slaap lekker, Remy';
+  setDot('s',true);ruis(.14);
+  await sleep(1500);if(!running)return;
+  await playSeq([0,1,4,7,8].filter(i=>bufs[i]),.85,'saff');
+  fadeT('saff','');schHour();
+  stInt=setInterval(updNext,30000);updNext();
+}
+function schHour(){
+  if(hIdx>=SH.length)return;
+  hTmr=setTimeout(async()=>{
+    if(!running)return;
+    await playSeq(SH[hIdx++].filter(i=>bufs[i]),.8,'saff');
+    fadeT('saff','');schHour();
+  },3600000);
+}
+function updNext(){
+  if(!running||!sStart)return;
+  const ms=((hIdx+1)*3600000)-(Date.now()-sStart);if(ms<0)return;
+  const m=Math.floor(ms/60000);
+  document.getElementById('sn').textContent=m>59?'volgende: '+Math.floor(m/60)+'u '+m%60+'m':'volgende: '+m+' min';
+}
+function stopAll(fin){
+  running=false;clearInterval(stInt);clearTimeout(hTmr);
+  mTmrs.forEach(t=>typeof t==='number'?clearTimeout(t):clearInterval(t));mTmrs=[];
+  stopRuis();stopPad();animBars(false);
+  setTimeout(()=>{
+    ['bms','bss'].forEach(id=>document.getElementById(id).style.display='');
+    ['bmx','bsx'].forEach(id=>document.getElementById(id).style.display='none');
+    document.getElementById('td').textContent='3:00';
+    document.getElementById('ts').textContent='klaar';
+    document.getElementById('rp').style.strokeDashoffset=2*Math.PI*75;
+    setDot('m',false);setDot('s',false);
+    if(!fin)fadeT('mt','Druk start · sluit je ogen');
+    document.getElementById('si').textContent='Bruine ruis start direct\nJouw stem: nu + elk uur\nTotaal: 12 uur';
+    document.getElementById('sn').textContent='';
+    fadeT('saff','');
+  },fin?4500:100);
+}
+renderZin();
+</script>
+</body>
+</html>
